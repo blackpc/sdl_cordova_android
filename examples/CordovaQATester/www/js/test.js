@@ -178,8 +178,8 @@ function createProxy(success, error){
 		isMediaApplication: true , 
 		languageDesired: "EN_US",
 		hmiLanguageDesired: "EN_US",
-		//appId : "584421907",
-		appId : "2239664629", //changed the id for debug
+		//appId : "XXXXXX",
+		appId : "XXXXXX", //changed the id for debug
 		majorVersion : "2",
 		minorVersion : "0"	
 	});
