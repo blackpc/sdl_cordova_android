@@ -1,4 +1,4 @@
-var SdlCordova = {
+Avar SdlCordova = {
 	
 	listeners: {},
 	names: {},
@@ -140,23 +140,27 @@ var SdlCordova = {
 		//Jiaxi copied from old file
 		// Optional Params
         if(opts.ngnMediaScreenAppName){ //not exist
-        	params[SdlCordova.Names.RPCFields.NGN_MEDIA_SCREEN_APP_NAME] = opts.ngnMediaScreenAppName;
+        	params[SdlCordova.names.RPCFields.NGN_MEDIA_SCREEN_APP_NAME] = opts.ngnMediaScreenAppName;
         }
         if(opts.vrSynonyms){ //not exist
-        	params[SdlCordova.Names.RPCFields.VR_SYNONYMS] = opts.vrSynonyms;
+        	params[SdlCordova.names.RPCFields.VR_SYNONYMS] = opts.vrSynonyms;
         }
         if(opts.sdlMsgVersion){ //not exist
-        	params[SdlCordova.Names.RPCFields.Sdl_MSG_VERSION] = opts.sdlMsgVersion;
+        	params[SdlCordova.names.RPCFields.SDL_MSG_VERSION] = opts.sdlMsgVersion;
         }
-       /*if(opts.language){ not needed renamed to languageDesired
+		/*if(opts.language){ not needed renamed to languageDesired
         	params[SdlCordova.Names.RPCFields.LANGUAGE] = opts.language;
-       }*/
-       if(opts.autoActivateID){ //not exist
-        	params[SdlCordova.Names.RPCFields.AUTO_ACTIVATE_ID] = opts.autoActivateID;
-       }
-       //
+		}*/
 
-		//cordova.exec(opts.success, opts.fail, "SdlCordova", SdlCordova.names.ACTION_CREATE_PROXY, [params]);
+		if(opts.autoActivateID){ //not exist
+        	params[SdlCordova.names.RPCFields.AUTO_ACTIVATE_ID] = opts.autoActivateID;
+		}
+		if (opts.transportType) {
+        	params[SdlCordova.names.RPCFields.TRANSPORT_TYPE] = opts.transportType;
+			params[SdlCordova.names.RPCFields.TCP_PORT] = opts.tcpPort;
+			params[SdlCordova.names.RPCFields.IP_ADDRESS] = opts.ipAddress;
+		}
+	   
 		cordova.exec(this.iProxyListenerCallback, opts.fail, "SdlCordova", SdlCordova.names.ACTION_CREATE_PROXY, [params]);
 	},
 	
@@ -1487,7 +1491,7 @@ var SdlCordova = {
 		opts = this.extend(opts, SdlCordova.defaultOptsNonRPC);
 		
 		return cordova.exec(opts.success, opts.error, "SdlCordova", SdlCordova.names.ACTION_ENABLE_DEBUG_TOOL, [null]);
-	},
+	},	
 	
 	/*****************************
 	 * Proxy functions
@@ -1736,6 +1740,22 @@ KeyboardProperties: function(keypressMode, keyboardLayout, limitedCharacterList,
 
 // Define Static Variables
 SdlCordova.names.RPC_MESSAGE_NAME = "rpc_message_name";
+
+// CreateProxy
+SdlCordova.names.RPCFields = {
+		// Create Proxy Parameters
+		NGN_MEDIA_SCREEN_APP_NAME: "ngnMediaScreenAppName",
+		
+		VR_SYNONYMS: "vrSynonyms",
+		SDL_MSG_VERSION: "syncMsgVersion",
+		MAJOR_VERISON: "majorVersion",
+		MINOR_VERISON: "minorVersion",
+		LANGUAGE: "language",
+		AUTO_ACTIVATE_ID: "autoActivateID",
+		TRANSPORT_TYPE: "transportType",
+		TCP_PORT: "tcpPort",
+		IP_ADDRESS: "ipAddress"
+};
 
 // Actions
 SdlCordova.names.ACTION_CREATE_PROXY = "createProxy";

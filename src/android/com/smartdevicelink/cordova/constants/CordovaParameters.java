@@ -13,7 +13,11 @@ public class CordovaParameters {
 								autoActivateID = "autoActivateID",
 								languageDesired = "languageDesired",
 								appId = "appId",
-								hmiLanguageDesired = "hmiLanguageDesired";
+								hmiLanguageDesired = "hmiLanguageDesired",
+								transportType = "transportType",
+								tcpPort = "tcpPort",
+								ipAddress = "ipAddress";
+								
 	
 	// Outgoing params
 	public static final String	PROXY_EXISTS = "proxy_exists",

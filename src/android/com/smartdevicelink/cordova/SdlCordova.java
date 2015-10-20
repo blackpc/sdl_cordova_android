@@ -351,8 +351,8 @@ public class SdlCordova extends CordovaPlugin {
 		// Future
 		Language hmiLanguageDesired = null;
 		String appId = null; // V2 - null until V2
-		// TransportType transportType = null; // V2
-		// BaseTransportConfig transportConfig = null; // V2
+		TransportType transportType = Const.Transport.KEY_BLUETOOTH; // V2
+		TCPTransportConfig transportConfig = null; // V2
 
 		// Get args from array
 		try {
@@ -410,6 +410,14 @@ public class SdlCordova extends CordovaPlugin {
 				autoActivateID = argumentsObject
 						.getString(CordovaParameters.autoActivateID);
 			}
+			
+			if (argumentsObject.has(CordovaParameters.transportType) && argumentsObject.getString(CordovaParameters.transportType == 'TCP') {
+				transportType = Const.Transport.KEY_TCP;
+				String tcpPort = argumentsObject.getString(CordovaParameters.tcpPort);
+				String ipAddress = argumentsObject.getString(CordovaParameters.ipAddress);
+				Boolean autoReconnect = true; // hardcoded for now
+				transportConfig = new TCPTransportConfig(tcpPort, ipAddress, autoReconnect);
+			}
 		} catch (JSONException e) {
 			String errorString = Actions.createProxy.name()
 					+ " args not in correct format. Format = " + argsFormat
@@ -426,10 +434,15 @@ public class SdlCordova extends CordovaPlugin {
 					+ " hmiLanguageDesired: " + hmiLanguageDesired + " appID: "
 					+ appId);
 			
-			// Create SdlProxy with minimal parameters..
-			sdlProxy = new SdlProxyALM(proxyListener, appName, ngnMediaScreenAppName, vrSynonyms, isMediaApp, sdlMsgVersion,
-					languageDesired, hmiLanguageDesired, appId, autoActivateID);
-			
+			if (transportConfig != null) {
+				// Create SdlProxy with minimal parameters.. for bluetooth connection
+				sdlProxy = new SdlProxyALM(proxyListener, appName, ngnMediaScreenAppName, vrSynonyms, isMediaApp, sdlMsgVersion,
+						languageDesired, hmiLanguageDesired, appId, autoActivateID);
+			} else {
+				// for TCP connection
+				sdlProxy = new SdlProxyALM(proxyListener, appName, ngnMediaScreenAppName, vrSynonyms, isMediaApp, sdlMsgVersion,
+						languageDesired, hmiLanguageDesired, appId, autoActivateID, transportType, transportConfig);
+			}
 		} catch (SdlException e) {
 			String errorString = Actions.createProxy.name()
 					+ " could not create SdlProxyALM. " + e.getMessage();
