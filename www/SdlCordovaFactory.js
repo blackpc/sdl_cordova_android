@@ -352,7 +352,9 @@ function PerformInteraction(){
 	this.initialText = null;
 	//this.interactionChoiceSetIDList = [];
 	this.interactionChoiceSetIDList = null;
-	
+	this.vrHelp = null; //added
+	this.interactionLayout = null; //added
+
 	this.setTTSText = function(ttsText, type){
 		type = type ? type.toUpperCase() : SdlCordova.names.speechCapabilities_TEXT;
 		if(!isValidTTSChunkType(type))
@@ -455,6 +457,22 @@ function PerformInteraction(){
 		this.interactionChoiceSetIDList = idArray ? SdlCordova.toArray(idArray) : null;
 	};
 	
+	// added
+	this.setVrHelp = function(vrHelpArray){
+		this.vrHelp = vrHelpArray ? SdlCordova.toArray(vrHelpArray) : null;	
+	};
+	
+	this.addVrHelp = function(vrHelp){
+		if(this.vrHelp == null)
+			this.vrHelp = [vrHelp];
+		else
+			this.vrHelp.push(vrHelp);
+	};
+	
+	this.setInteractionLayout = function(interactionLayout){
+		this.interactionLayout = interactionLayout;
+	};
+	
 	this.getInitialTTSChunks = function(){
 		return this.initialTTSChunks;
 	};
@@ -475,6 +493,12 @@ function PerformInteraction(){
 	};
 	this.getInteractionChoiceSetIDList = function(){
 		return this.interactionChoiceSetIDList;
+	};
+	this.getVrHelp = function(){
+		return this.vrHelp;	
+	};
+	this.getInteractionLayout = function(){
+		return this.interactionLayout;
 	};
 }
 PerformInteraction.prototype = Object.create(RPCBase.prototype);
@@ -523,6 +547,10 @@ function SetGlobalProperties(){
 	this.timeoutPromptTTSChunks = null;
 	this.vrHelpTitle = null; //added
 	this.vrHelp = null; //added
+	this.menuTitle = null; //added
+	this.menuIcon = null; //added
+	this.keyboardProperties = null; //added
+
 	
 	this.setHelpPromptTTSText = function(ttsText, type){
 		type = type ? type.toUpperCase() : SdlCordova.names.speechCapabilities_TEXT;
@@ -584,12 +612,36 @@ function SetGlobalProperties(){
 		this.vrHelpTitle = vrHelpTitle;
 	};
 	
+	this.setMenuTitle = function(menuTitle){
+		this.menuTitle = menuTitle;
+	};
+	
+	this.setMenuIcon = function(menuIcon){
+		this.menuIcon = menuIcon;
+	};
+	
+	this.setKeyboardProperties = function(keyboardProperties){
+		this.keyboardProperties = keyboardProperties;
+	};
+	
 	this.getVrHelpTitle = function(){
 		return this.vrHelpTitle;
 	};
 	
 	this.getVrHelp = function(){
 		return this.vrHelp;
+	};
+	
+	this.getMenuTitle = function(){
+		return this.menuTitle;
+	};
+	
+	this.getMenuIcon = function(){
+		return this.menuIcon;
+	};
+	
+	this.getKeyboardProperties = function(){
+		return this.keyboardProperties;
 	};
 }
 SetGlobalProperties.prototype = Object.create(RPCBase.prototype);
@@ -1970,6 +2022,33 @@ function Slider(){
 Slider.prototype = Object.create(RPCBase.prototype);
 factory.Slider = Slider;
 
+function ReadDID(){
+	RPCBase.call(this);
+	
+	this.functionName = "readDID";
+	this.ecuName = null;
+	this.didLocation = null;
+	
+	this.setEcuName = function(ecuName){
+		this.ecuName = ecuName;
+	};
+	
+	this.setDidLocation = function(didLocation){
+		this.didLocation = didLocation;
+	};
+	
+	this.getEcuName = function(){
+		return this.ecuName;
+	};
+	
+	this.getDidLocation = function(){
+		return this.didLocation;
+	};
+	
+}
+ReadDID.prototype = Object.create(RPCBase.prototype);
+factory.ReadDID = ReadDID;
+
 // end added
 function isValidTTSChunkType(type){
 	switch(type){
@@ -2084,7 +2163,6 @@ factory.onButtonPress = onButtonPress;
 function proxyListener(info){ //unfinished 
 	var fs = null;
 	console.log("ProxyListner: "+info.FunctionName);
-	console.log("Info detail: "+info);
 	if((fs = onCorrelationIdListeners[info.CorrelationID])){
 		for(var i = 0; i < fs.length; i++){
 			fs[i](info);
@@ -2180,3 +2258,6 @@ SdlCordova.onSetAppIconResponse(proxyListener);
 SdlCordova.onSetDisplayLayoutResponse(proxyListener);
 SdlCordova.onGetDTCsResponse(proxyListener);
 SdlCordova.onSliderResponse(proxyListener);
+SdlCordova.onReadDIDResponse(proxyListener);
+SdlCordova.onOnPermissionsChange(proxyListener);
+SdlCordova.onOnLanguageChange(proxyListener);

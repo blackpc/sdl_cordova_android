@@ -178,8 +178,8 @@ function createProxy(success, error){
 		isMediaApplication: true , 
 		languageDesired: "EN_US",
 		hmiLanguageDesired: "EN_US",
-		//appId : "584421907",
-		appId : "2239664629", //changed the id for debug
+		//appId : "XXXXXX",
+		appId : "XXXXXX", //changed the id for debug
 		majorVersion : "2",
 		minorVersion : "0"	
 	});
@@ -273,20 +273,11 @@ function sendRPC(rpc, ignoreResponse){
 function rpcResponseCheck(info){
 	testManager.addRPCResponseCount();	
 	
-	/*if(info.parameters && info.parameters.success === true){
-		prependLog("RPC Response Success " + info.correlationID);
-	}else if(info.name == SdlCordova.Names.Functions.PERFORM_INTERACTION
-			&& info.parameters && info.parameters.resultCode == SdlCordova.Names.ResultCode.ABORTED){
-		prependLog("RPC Response Aborted " + info.correlationID);
-	}else{
-		prependLogError("RPC Request Error " + info.correlationID);
-		prependLogError(info);
-		testManager.addRPCResponseError();
-		testManager.fail();
-	}*/
-	
 	if(info.JSONData && info.JSONData.success === true){
 		prependLog("RPC Response Success " + info.CorrelationID);
+		prependLog(info.JSONData);
+	}else if(info.JSONData && info.MessageType == "notification"){
+		prependLog(info.JSONData);
 	}else if(info.FunctionName == SdlCordova.names.function_name_performInteraction
 			&& info.JSONData && info.JSONData.resultCode == "ABORTED"){
 		prependLog("RPC Response Aborted " + info.CorrelationID);

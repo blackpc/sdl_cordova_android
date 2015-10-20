@@ -40,6 +40,46 @@ Avar SdlCordova = {
 		return o instanceof Array ? o : [o];
 	},
 	
+	prependLog: function(text){
+		text = this.toJSON(text);
+		text = "<div>" + text + "</div>";
+		console.log(text);
+	},
+
+	toJSON: function(o){
+		var type = typeof o;
+		if(type == "object"){
+			var comma = "";
+			if(o instanceof Array){
+				var json = "[";
+				for(key in o){
+					json += comma + toJSON(o[key]);
+					comma = ", ";
+				}
+				return json + "]";
+			}else if(o == null){
+				return "null";
+			}else{
+				var json = "{";
+				for(key in o){
+					json += comma + '"' + key + '": ' + toJSON(o[key]);
+					comma = ", ";
+				}
+				return json + "}";
+			}
+		}else{
+			switch(type){
+			case "number": return o;
+			case "string": return '"' + o + '"';
+			case "boolean": return (o ? "true" : "false");
+			case null: return "null";
+			case "function": return "function()";
+			case "undefined": return "undefined";
+			default: return o;
+			}
+		}
+	},
+	
 	//
 	/*testPlugin: function(success, fail, resultType){
 		return cordova.exec(function(){alert("success");}, 
@@ -145,7 +185,8 @@ Avar SdlCordova = {
 	
 	iProxyListenerCallback: function(json){
 		console.log("iProxyListenerCallback is being called");
-		console.log("JSON: " + json);
+		//console.log("JSON: " + json);
+		this.prependLog(json);
 		/* NOTE: This function is not called within the context of this object */
 		if(SdlCordova.createProxySuccess != null)
 		{			
@@ -513,6 +554,12 @@ Avar SdlCordova = {
 		if(opts.interactionChoiceSetIDList){
 			rpcRequestParams[SdlCordova.names.interactionChoiceSetIDList] = opts.interactionChoiceSetIDList;
 		}
+		if(opts.vrHelp){
+			rpcRequestParams[SdlCordova.names.vrHelp] = this.toArray(opts.vrHelp);
+		}
+		if(opts.interactionLayout){
+			rpcRequestParams[SdlCordova.names.interactionLayout] = opts.interactionLayout;
+		}
 			
 		// Build the request
 		var rpcRequest = {};
@@ -729,6 +776,15 @@ Avar SdlCordova = {
 		}
 		if(opts.vrHelp){
 			rpcRequestParams[SdlCordova.names.vrHelp] = this.toArray(opts.vrHelp);
+		}
+		if(opts.menuTitle){
+			rpcRequestParams[SdlCordova.names.menuTitle] = opts.menuTitle;
+		}
+		if(opts.menuIcon){
+			rpcRequestParams[SdlCordova.names.menuIcon] = opts.menuIcon;
+		}
+		if(opts.keyboardProperties){
+			rpcRequestParams[SdlCordova.names.keyboardProperties] = opts.keyboardProperties;
 		}
 		
 		// Build the request
@@ -1315,6 +1371,32 @@ Avar SdlCordova = {
 		return this.sendRPCRequest(opts, rpcMessage);
 	},
 	
+	readDID:function(correlationId, opts){
+		opts = this.extend(opts, SdlCordova.defaultOpts);
+		
+		// Build the request params
+		var rpcRequestParams = {};
+		
+		if(opts.ecuName){
+			rpcRequestParams[SdlCordova.names.ecuName] = Number(opts.ecuName);
+		}
+		if(opts.didLocation){
+			rpcRequestParams[SdlCordova.names.didLocation] = this.toArray(opts.didLocation);
+		}
+		
+		// Build the request
+		var rpcRequest = {};
+		rpcRequest[SdlCordova.names.function_name] = SdlCordova.names.function_name_readDID;
+		rpcRequest[SdlCordova.names.correlationID] = Number(correlationId);
+		rpcRequest[SdlCordova.names.parameters] = rpcRequestParams;
+		
+		// Build the message
+		var rpcMessage = {};
+		rpcMessage[SdlCordova.names.messageTypeRequest] = rpcRequest;
+		
+		return this.sendRPCRequest(opts, rpcMessage);
+	},
+	
 	getButtonCapabilities: function(opts){
 		opts = this.extend(opts, SdlCordova.defaultOptsNonRPC);
 		
@@ -1542,6 +1624,10 @@ Avar SdlCordova = {
 	onSliderResponse: function(f){
 		this.bind(SdlCordova.names.function_name_slider, f);
 	},
+	
+	onReadDIDResponse: function(f){
+		this.bind(SdlCordova.names.function_name_readDID, f);
+	},
 	//end
 	
 	onOnButtonEvent: function(f){
@@ -1582,12 +1668,16 @@ Avar SdlCordova = {
 	
 	//added
 	onOnVehicleData: function(f){
-		console.log("in onVehicleData");
 		this.bind(SdlCordova.names.RPC_NOTIFICATION_onVehicleData, f);
 	},
 	onOnAudioPassThru: function(f){
-		console.log("In onAudioPassThru");
 		this.bind(SdlCordova.names.RPC_NOTIFICATION_onAudioPassThru, f);
+	},
+	onOnPermissionsChange: function(f){
+		this.bind(SdlCordova.names.RPC_NOTIFICATION_onPermissionsChange, f);
+	},
+	onOnLanguageChange: function(f){
+		this.bind(SdlCordova.names.RPC_NOTIFICATION_onLanguageChange, f);
 	},
 	//end add
 	onGenericResponse: function(f){
@@ -1637,6 +1727,14 @@ VrHelpItem: function(position, text, image){
 	this[SdlCordova.names.position] = position;
 	this[SdlCordova.names.text] = text;
 	this[SdlCordova.names.image] = image;
+},
+
+KeyboardProperties: function(keypressMode, keyboardLayout, limitedCharacterList, autoCompleteText, language){
+	this[SdlCordova.names.keypressMode] = keypressMode;
+	this[SdlCordova.names.keyboardLayout] = keyboardLayout;
+	this[SdlCordova.names.limitedCharacterList] = limitedCharacterList;
+	this[SdlCordova.names.autoCompleteText] = autoCompleteText;
+	this[SdlCordova.names.language] = language;
 }
 };
 
@@ -1775,12 +1873,22 @@ SdlCordova.names.correlationID = "correlationID";
 	SdlCordova.names.interactionMode_MANUAL_ONLY = "MANUAL_ONLY";
 	SdlCordova.names.interactionMode_VR_ONLY = "VR_ONLY";
 	SdlCordova.names.interactionMode_BOTH = "BOTH";
+	SdlCordova.names.interactionLayout = "interactionLayout";
+	
 	
 	// SetGlobalProperties
 	//SdlCordova.names.helpPrompt = "helpPrompt";
 	//SdlCordova.names.timeoutPrompt = "timeoutPrompt";
 	SdlCordova.names.vrHelpTitle = "vrHelpTitle";
 	SdlCordova.names.vrHelp = "vrHelp";
+	SdlCordova.names.keypressMode = "keypressMode";
+	SdlCordova.names.keyboardLayout = "keyboardLayout";
+	SdlCordova.names.limitedCharacterList = "limitedCharacterList";
+	SdlCordova.names.autoCompleteText = "autoCompleteText";
+	//SdlCordova.names.language = "language";
+	SdlCordova.names.menuTitle = "menuTitle";
+	SdlCordova.names.menuIcon = "menuIcon";
+	SdlCordova.names.keyboardProperties = "keyboardProperties";
 	
 	// ResetGlobalProperties
 	SdlCordova.names.properties = "properties";
@@ -1897,6 +2005,7 @@ SdlCordova.names.correlationID = "correlationID";
 	SdlCordova.names.function_name_scrollableMessage = "ScrollableMessage";
 	SdlCordova.names.function_name_changeRegistration = "ChangeRegistration";
 	SdlCordova.names.function_name_slider = "Slider";
+	SdlCordova.names.function_name_readDID = "ReadDID";
 	
 	// Notifications
 	SdlCordova.names.RPC_NOTIFICATION_onCommand = "OnCommand";
@@ -1910,6 +2019,8 @@ SdlCordova.names.correlationID = "correlationID";
 	SdlCordova.names.RPC_NOTIFICATION_onAppInterfaceUnregistered = "OnAppInterfaceUnregistered";	
 	SdlCordova.names.RPC_NOTIFICATION_onVehicleData = "OnVehicleData";
 	SdlCordova.names.RPC_NOTIFICATION_onAudioPassThru = "OnAudioPassThru";
+	SdlCordova.names.RPC_NOTIFICATION_onPermissionsChange = "OnPermissionsChange";
+	SdlCordova.names.RPC_NOTIFICATION_onLanguageChange = "OnLanguageChange";
 	
 	// Proxy Events
 	SdlCordova.names.PROXY_EVENT_OnProxyClosed = "OnProxyClosed";
@@ -1994,6 +2105,10 @@ SdlCordova.names.correlationID = "correlationID";
 	SdlCordova.names.sliderFooter = "sliderFooter";
 	//SdlCordova.names.position = "position";
 	//SdlCordova.names.timeout = "timeout";
+	
+	//ReadDID (added)
+	//SdlCordova.names.ecuName = "ecuName";
+	SdlCordova.names.didLocation = "didLocation";
 	
 /*************** Default Parameters *****************/
 // Global

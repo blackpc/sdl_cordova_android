@@ -14,18 +14,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
 
-// Pre Cordova 3.0 Imports
-//import org.apache.cordova.api.CallbackContext;
-//import org.apache.cordova.api.CordovaPlugin;
-//import org.apache.cordova.api.PluginResult;
-
-
-
-
-
-
-
-
 //Post Cordova 3.0 Imports
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -58,12 +46,15 @@ import com.smartdevicelink.proxy.RPCMessage;
 import com.smartdevicelink.proxy.RPCRequest;
 import com.smartdevicelink.proxy.RPCResponse;
 import com.smartdevicelink.proxy.SdlProxyALM;
+import com.smartdevicelink.proxy.callbacks.OnServiceEnded;
+import com.smartdevicelink.proxy.callbacks.OnServiceNACKed;
 import com.smartdevicelink.proxy.constants.Names;
 import com.smartdevicelink.proxy.interfaces.IProxyListenerALM;
 import com.smartdevicelink.proxy.rpc.AddCommand;
 import com.smartdevicelink.proxy.rpc.AddCommandResponse;
 import com.smartdevicelink.proxy.rpc.AddSubMenu;
 import com.smartdevicelink.proxy.rpc.AddSubMenuResponse;
+import com.smartdevicelink.proxy.rpc.AlertManeuverResponse;
 //import com.smartdevicelink.proxy.rpc.AlertManeuverResponse; 
 import com.smartdevicelink.proxy.rpc.AlertResponse;
 import com.smartdevicelink.proxy.rpc.ButtonCapabilities;
@@ -104,6 +95,7 @@ import com.smartdevicelink.proxy.rpc.OnTouchEvent; //added for gen3
 import com.smartdevicelink.proxy.rpc.OnVehicleData;
 import com.smartdevicelink.proxy.rpc.PerformAudioPassThruResponse;
 import com.smartdevicelink.proxy.rpc.PerformInteractionResponse;
+import com.smartdevicelink.proxy.rpc.PresetBankCapabilities;
 import com.smartdevicelink.proxy.rpc.PutFileResponse;
 import com.smartdevicelink.proxy.rpc.ReadDIDResponse;
 import com.smartdevicelink.proxy.rpc.ResetGlobalPropertiesResponse;
@@ -112,9 +104,11 @@ import com.smartdevicelink.proxy.rpc.SetAppIconResponse;
 import com.smartdevicelink.proxy.rpc.SetDisplayLayoutResponse;
 import com.smartdevicelink.proxy.rpc.SetGlobalPropertiesResponse;
 import com.smartdevicelink.proxy.rpc.SetMediaClockTimerResponse;
+import com.smartdevicelink.proxy.rpc.ShowConstantTbtResponse;
 //import com.smartdevicelink.proxy.rpc.ShowConstantTbtResponse; 
 import com.smartdevicelink.proxy.rpc.ShowResponse;
 import com.smartdevicelink.proxy.rpc.SliderResponse;
+import com.smartdevicelink.proxy.rpc.SoftButtonCapabilities;
 import com.smartdevicelink.proxy.rpc.SpeakResponse;
 import com.smartdevicelink.proxy.rpc.SubscribeButton;
 import com.smartdevicelink.proxy.rpc.SubscribeButtonResponse;
@@ -129,6 +123,8 @@ import com.smartdevicelink.proxy.rpc.SendLocationResponse; //added
 import com.smartdevicelink.proxy.rpc.DialNumberResponse; //added
 import com.smartdevicelink.proxy.rpc.StreamRPCResponse; //added
 import com.smartdevicelink.proxy.rpc.OnStreamRPC; //added
+import com.smartdevicelink.proxy.rpc.UpdateTurnListResponse;
+import com.smartdevicelink.proxy.rpc.VehicleType;
 import com.smartdevicelink.proxy.rpc.enums.HMILevel;
 import com.smartdevicelink.proxy.rpc.enums.HmiZoneCapabilities;
 import com.smartdevicelink.proxy.rpc.enums.Language;
@@ -137,6 +133,10 @@ import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.VrCapabilities;
 import com.smartdevicelink.transport.SiphonServer;
 import com.smartdevicelink.util.DebugTool; 
+
+
+
+
 
 
 
@@ -173,13 +173,11 @@ public class SdlCordova extends CordovaPlugin {
 	private static int mySampleRate = 0;
     private static int myBitsPerSample = 0;    
     private static int iByteCount = 0;
-	private boolean bSaveWave = false; //may not need
-	private static String waveFilename = null;
+	private static File filePath = null;
+	private static String fileName = null;
+	private static String fileExt = "pcm";
 	private static OutputStream audioPassThruOutStream = null;
-	private static final String AUDIOPASSTHRU_OUTPUT_FILE_PCM = "audiopassthru.pcm";
-	private static final String AUDIOPASSTHRU_OUTPUT_FILE_WAV = "audiopassthru.wav";
-	private static final int WAV = 0;
-	private static final int PCM = 1;
+	private static boolean oktosave = false;
 	
 	// for PutFile
 	//private byte[] code = null;
@@ -757,7 +755,6 @@ public class SdlCordova extends CordovaPlugin {
 	}
 
 	private static void getHmiDisplayLanguage(CallbackContext callbackContext) {
-		// Currently unsupported, will be implemented in AppLink V2
 
 		// CallbackContext must be valid
 		if (callbackContext == null) {
@@ -766,10 +763,41 @@ public class SdlCordova extends CordovaPlugin {
 					+ " cannot be called without a valid CallbackContext.");
 			return;
 		}
+		
+		if (sdlProxy == null) {
+			String errorString = "Could not execute command, "
+					+ Actions.getHmiDisplayLanguage.name()
+					+ ". No SdlProxy object has been instanciated. Call "
+					+ Actions.createProxy.name() + " first.";
+			callbackContext.error(errorString);
+			return;
+		}
 
-		String errorString = Actions.getHmiDisplayLanguage.name()
+		JSONArray hmiDisplayLanguageJSONArray = new JSONArray();
+
+		try {
+			Language hmiDisplayLanguage = sdlProxy.getHmiDisplayLanguage();
+
+			if (hmiDisplayLanguage == null) {
+				String errorString = "No value returned by call: "
+						+ Actions.getHmiDisplayLanguage.name();
+				callbackContext.error(errorString);
+				return;
+			} else {
+					hmiDisplayLanguageJSONArray.put(hmiDisplayLanguage.toString());
+			}
+		} catch (SdlException e) {
+			String errorString = Actions.getHmiDisplayLanguage.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+			return;
+		}
+
+		callbackContext.success(hmiDisplayLanguageJSONArray);
+
+		/*String errorString = Actions.getHmiDisplayLanguage.name()
 				+ " method currently unsupported.";
-		callbackContext.error(errorString);
+		callbackContext.error(errorString);*/
 	}
 
 	private static void getHmiZoneCapabilities(CallbackContext callbackContext) {
@@ -819,9 +847,7 @@ public class SdlCordova extends CordovaPlugin {
 		callbackContext.success(hmiZoneCapabilitiesJSONArray);
 	}
 
-	private static void getPresetBankCapabilities(
-			CallbackContext callbackContext) {
-		// Currently unsupported, will be implemented in AppLink V2
+	private static void getPresetBankCapabilities(CallbackContext callbackContext) {
 
 		// CallbackContext must be valid
 		if (callbackContext == null) {
@@ -830,15 +856,51 @@ public class SdlCordova extends CordovaPlugin {
 					+ " cannot be called without a valid CallbackContext.");
 			return;
 		}
+		
+		if (sdlProxy == null) {
+			String errorString = "Could not execute command, "
+					+ Actions.getPresetBankCapabilities.name()
+					+ ". No SdlProxy object has been instanciated. Call "
+					+ Actions.createProxy.name() + " first.";
+			callbackContext.error(errorString);
+			return;
+		}
 
-		String errorString = Actions.getPresetBankCapabilities.name()
+		JSONObject presetBankCapabilitiesJSON = new JSONObject();
+
+		try {
+			// Get the ButtonCapabilities Vector
+			PresetBankCapabilities presetBankCapabilities = sdlProxy.getPresetBankCapabilities();
+
+			if (presetBankCapabilities == null) {
+				String errorString = "No value returned by call: "
+						+ Actions.getPresetBankCapabilities.name();
+				callbackContext.error(errorString);
+				return;
+			} else {
+				presetBankCapabilitiesJSON = presetBankCapabilities.serializeJSON();
+			}
+		} catch (SdlException e) {
+			String errorString = Actions.getPresetBankCapabilities.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+			return;
+		} catch (JSONException e) {
+			String errorString = Actions.getPresetBankCapabilities.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+
+			return;
+		}
+
+		callbackContext.success(presetBankCapabilitiesJSON);
+
+		/*String errorString = Actions.getPresetBankCapabilities.name()
 				+ " method currently unsupported.";
-		callbackContext.error(errorString);
+		callbackContext.error(errorString);*/
 	}
 
-	private static void getSoftButtonCapabilities(
-			CallbackContext callbackContext) {
-		// Currently unsupported, will be implemented in AppLink V2
+	private static void getSoftButtonCapabilities(CallbackContext callbackContext) {
 
 		// CallbackContext must be valid
 		if (callbackContext == null) {
@@ -847,10 +909,44 @@ public class SdlCordova extends CordovaPlugin {
 					+ " cannot be called without a valid CallbackContext.");
 			return;
 		}
+		
+		if (sdlProxy == null) {
+			String errorString = "Could not execute command, "
+					+ Actions.getSoftButtonCapabilities.name()
+					+ ". No SdlProxy object has been instanciated. Call "
+					+ Actions.createProxy.name() + " first.";
+			callbackContext.error(errorString);
+			return;
+		}
 
-		String errorString = Actions.getSoftButtonCapabilities.name()
+		JSONArray softButtonCapabilitiesJSONArray = new JSONArray();
+		
+		try {
+			// Get the ButtonCapabilities Vector
+			List<SoftButtonCapabilities> softButtonCapabilitiesList = sdlProxy.getSoftButtonCapabilities();
+
+			if (softButtonCapabilitiesList == null) {
+				String errorString = "No value returned by call: "
+						+ Actions.getSoftButtonCapabilities.name();
+				callbackContext.error(errorString);
+				return;
+			} else {
+				for (SoftButtonCapabilities softButtonCapabilities : softButtonCapabilitiesList) {
+					softButtonCapabilitiesJSONArray.put(softButtonCapabilities.toString());
+				}
+			}
+		} catch (SdlException e) {
+			String errorString = Actions.getSoftButtonCapabilities.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+			return;
+		}
+
+		callbackContext.success(softButtonCapabilitiesJSONArray);
+
+		/*String errorString = Actions.getSoftButtonCapabilities.name()
 				+ " method currently unsupported.";
-		callbackContext.error(errorString);
+		callbackContext.error(errorString);*/
 	}
 
 	private static void getSpeechCapabilities(CallbackContext callbackContext) {
@@ -900,7 +996,6 @@ public class SdlCordova extends CordovaPlugin {
 	}
 
 	private static void getSdlLanguage(CallbackContext callbackContext) {
-		// Currently unsupported, will be implemented in AppLink V2
 
 		// CallbackContext must be valid
 		if (callbackContext == null) {
@@ -909,9 +1004,40 @@ public class SdlCordova extends CordovaPlugin {
 					+ " cannot be called without a valid CallbackContext.");
 			return;
 		}
+		
+		if (sdlProxy == null) {
+			String errorString = "Could not execute command, "
+					+ Actions.getSdlLanguage.name()
+					+ ". No SdlProxy object has been instanciated. Call "
+					+ Actions.createProxy.name() + " first.";
+			callbackContext.error(errorString);
+			return;
+		}
 
-		String errorString = "Method currently unspported.";
-		callbackContext.error(errorString);
+		JSONArray SdlLanguageJSONArray = new JSONArray();
+
+		try {
+			Language sdlDisplayLanguage = sdlProxy.getSdlLanguage();
+
+			if (sdlDisplayLanguage == null) {
+				String errorString = "No value returned by call: "
+						+ Actions.getSdlLanguage.name();
+				callbackContext.error(errorString);
+				return;
+			} else {
+				SdlLanguageJSONArray.put(sdlDisplayLanguage.toString());
+			}
+		} catch (SdlException e) {
+			String errorString = Actions.getSdlLanguage.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+			return;
+		}
+
+		callbackContext.success(SdlLanguageJSONArray);
+
+		/*String errorString = "Method currently unspported.";
+		callbackContext.error(errorString);*/
 	}
 
 	private static void getSdlMsgVersion(CallbackContext callbackContext) {
@@ -967,7 +1093,6 @@ public class SdlCordova extends CordovaPlugin {
 	}
 
 	private static void getVehicleType(CallbackContext callbackContext) {
-		// Currently unsupported, will be implemented in AppLink V2
 
 		// CallbackContext must be valid
 		if (callbackContext == null) {
@@ -976,10 +1101,50 @@ public class SdlCordova extends CordovaPlugin {
 					+ " cannot be called without a valid CallbackContext.");
 			return;
 		}
+		
+		if (sdlProxy == null) {
+			String errorString = "Could not execute command, "
+					+ Actions.getVehicleType.name()
+					+ ". No SdlProxy object has been instanciated. Call "
+					+ Actions.createProxy.name() + " first.";
+			callbackContext.error(errorString);
 
-		String errorString = Actions.getVehicleType.name()
+			return;
+		}
+
+		JSONObject vehicleTypeJSON = new JSONObject();
+
+		try {
+			VehicleType vehicleType = sdlProxy.getVehicleType();
+
+			if (vehicleType == null) {
+				String errorString = "No value returned by call: "
+						+ Actions.getVehicleType.name();
+				callbackContext.error(errorString);
+
+				return;
+			} else {
+				vehicleTypeJSON = vehicleType.serializeJSON();
+			}
+		} catch (SdlException e) {
+			String errorString = Actions.getVehicleType.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+
+			return;
+		} catch (JSONException e) {
+			String errorString = Actions.getVehicleType.name()
+					+ " could not complete. " + e.getMessage();
+			callbackContext.error(errorString);
+
+			return;
+		}
+
+		callbackContext.success(vehicleTypeJSON);
+
+		/*String errorString = Actions.getVehicleType.name()
 				+ " method currently unsupported.";
-		callbackContext.error(errorString);
+		callbackContext.error(errorString);*/
 	}
 
 	private static void getVrCapabilities(CallbackContext callbackContext) {
@@ -1170,9 +1335,22 @@ public class SdlCordova extends CordovaPlugin {
 						//parameters.put("bulkData", Base64.decode(temp, Base64.DEFAULT));
 					}
 					else if(functionName.equals(Names.PerformAudioPassThru)){
-						mySampleRate = getSampleRate((String)parameters.get("samplingRate"));
-						myBitsPerSample = getBitsPerSample((String)parameters.get("bitsPerSample"));    
-						//waveFilename = (String)parameters.get("filename");
+						String temp = (String)parameters.get("filename");
+						filePath = new File (temp.substring(0, temp.lastIndexOf("/")));
+						fileName = temp.substring(temp.lastIndexOf("/")+1, temp.lastIndexOf("."));
+						fileExt = temp.substring(temp.lastIndexOf(".")+1);
+						if(fileExt.toLowerCase().equals("pcm") || fileExt.toLowerCase().equals("wav")){
+							oktosave = true;
+						}
+						else{
+							oktosave = false;
+							logToConsoleAndUI(fileExt + " is not supported!", null);
+						}
+						if(oktosave){
+							mySampleRate = getSampleRate((String)parameters.get("samplingRate"));
+							myBitsPerSample = getBitsPerSample((String)parameters.get("bitsPerSample"));
+						}
+						
 					}
 				}
 				
@@ -1743,7 +1921,17 @@ public class SdlCordova extends CordovaPlugin {
 		}
 
 		public void onEndAudioPassThruResponse(EndAudioPassThruResponse response) {
-			//onPerformAudioPassThruResponse(response);
+			closeAudioPassThruStream();
+			if (response.getSuccess() == true && oktosave)
+			{
+				if(fileExt.toLowerCase().equals("wav")){
+					saveAsWav();
+					deletePCM();
+				}
+			}		
+			else{
+				deletePCM();
+			}	
 			sendRPCCallback(getRPCInfo(response));
 		}
 
@@ -1771,7 +1959,8 @@ public class SdlCordova extends CordovaPlugin {
 			iByteCount = iByteCount + aptData.length;
 			
 			// write to file
-			File outFile = audioPassThruOutputFile(PCM);
+			//File outFile = audioPassThruOutputFile(PCM);
+			File outFile = new File(filePath, fileName + ".pcm");
 			try {
 				if (audioPassThruOutStream == null) {
 					audioPassThruOutStream = new BufferedOutputStream(
@@ -1780,12 +1969,14 @@ public class SdlCordova extends CordovaPlugin {
 				audioPassThruOutStream.write(aptData);
 				audioPassThruOutStream.flush();
 			} catch (FileNotFoundException e) {
+				oktosave = false;
 				logToConsoleAndUI(
 						"Output file "
 								+ (outFile != null ? outFile.toString()
 										: "'unknown'")
 								+ " can't be opened for writing", e);
 			} catch (IOException e) {
+				oktosave = false;
 				logToConsoleAndUI("Can't write to output file", e);
 			}
 			
@@ -1804,22 +1995,18 @@ public class SdlCordova extends CordovaPlugin {
 			sendRPCCallback(getRPCInfo(notification));
 		}
 
-		public void onPerformAudioPassThruResponse(
-				PerformAudioPassThruResponse response) {
+		public void onPerformAudioPassThruResponse(PerformAudioPassThruResponse response) {
 			closeAudioPassThruStream();
-			//closeAudioPassThruMediaPlayer();
 					
-			if (response.getSuccess() == true)
+			if (response.getSuccess() == true && oktosave)
 			{
-				saveAsWav();
+				if(fileExt.toLowerCase().equals("wav")){
+					saveAsWav();
+					deletePCM();
+				}
 			}		
 			else{
-				File outFile = audioPassThruOutputFile(PCM);
-				if ((outFile != null) && outFile.exists()) {
-					if (!outFile.delete()) {
-						logToConsoleAndUI("Failed to delete output file", null);
-					}
-				}
+				deletePCM();
 			}	
 			
 			sendRPCCallback(getRPCInfo(response));
@@ -1941,13 +2128,57 @@ public class SdlCordova extends CordovaPlugin {
 			// TODO
 		}
 
+		@Override
+		public void onAlertManeuverResponse(AlertManeuverResponse arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onServiceDataACK() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onServiceEnded(OnServiceEnded arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onServiceNACKed(OnServiceNACKed arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onShowConstantTbtResponse(ShowConstantTbtResponse arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onUpdateTurnListResponse(UpdateTurnListResponse arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
 	};
 	
 	// PerformAudioPassThru
 	public static int getSampleRate(String mySample)
 	{
-		int iReturn = 0;    	
-		switch (mySample) 
+		int iReturn = 0;  
+		if(mySample.equals("8KHZ"))
+			iReturn = 8000;
+		else if(mySample.equals("16KHZ"))
+			iReturn = 16000;
+		else if(mySample.equals("22KHZ"))
+			iReturn = 22050;
+		else if(mySample.equals("44KHZ"))
+			iReturn = 44100;      
+		/*switch (mySample) 
 		{
 			case "8KHZ": iReturn = 8000;
 				break;
@@ -1957,45 +2188,35 @@ public class SdlCordova extends CordovaPlugin {
 				break;
 			case "44KHZ":  iReturn = 44100;        		
 				break;                             
-		}    	
+		}*/    	
 		return iReturn;
 	}
 			
 			
 	public static int getBitsPerSample(String myBitsPerSample)
 	{
-		int iReturn = 0;    	
-		switch (myBitsPerSample) 
+		int iReturn = 0;    
+		if(myBitsPerSample.equals("8_BIT"))
+			iReturn = 8;
+		else if(myBitsPerSample.equals("16_BIT"))
+			iReturn = 16;
+		/*switch (myBitsPerSample) 
 		{    
 			case "8_BIT": iReturn = 8;
 				break;
 			case "16_BIT":  iReturn = 16;
 					break;
-		}    	
+		}*/    	
 		return iReturn;    	
 	}
 	
-	private static File audioPassThruOutputFile(int iTypePar) {
-		
-		String sFileType = "";
-		if (iTypePar == WAV)
-		{
-			sFileType = AUDIOPASSTHRU_OUTPUT_FILE_WAV;
+	private static void deletePCM(){
+		File outFile = new File(filePath, fileName + ".pcm");
+		if ((outFile != null) && outFile.exists()) {
+			if (!outFile.delete()) {
+				logToConsoleAndUI("Failed to delete output file", null);
+			}
 		}
-		else if (iTypePar == PCM)
-		{
-			sFileType = AUDIOPASSTHRU_OUTPUT_FILE_PCM;
-		}
-		
-		File baseDir = isExtStorageWritable() ? Environment
-				.getExternalStorageDirectory() : null;
-		File outFile = new File(baseDir, sFileType);
-		return outFile;
-	}
-
-	private static boolean isExtStorageWritable() {
-		String state = Environment.getExternalStorageState();
-		return Environment.MEDIA_MOUNTED.equals(state);
 	}
 	
 	private static void logToConsoleAndUI(String msg, Throwable thr) {
@@ -2071,7 +2292,7 @@ public class SdlCordova extends CordovaPlugin {
 		try
         {                                         
 			byte[] myData;        
-            DataOutputStream outFile  = new DataOutputStream(new FileOutputStream(audioPassThruOutputFile(WAV)));                                     
+            DataOutputStream outFile  = new DataOutputStream(new FileOutputStream(new File(filePath, fileName + ".wav")));                                     
             long totalAudioLen = iByteCount;
             long totalDataLen = totalAudioLen + 36;
             long longSampleRate = mySampleRate;
@@ -2079,7 +2300,7 @@ public class SdlCordova extends CordovaPlugin {
             long byteRate =  mySampleRate * channels * myBitsPerSample/8;
             byte[] header = WriteWaveFileHeader(outFile, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);                                    
             outFile.write(header, 0, 44);
-            DataInputStream inFile = new DataInputStream(new FileInputStream(audioPassThruOutputFile(PCM)));
+            DataInputStream inFile = new DataInputStream(new FileInputStream(new File(filePath, fileName + ".pcm")));
             myData = new byte[iByteCount];
             inFile.read(myData);                                        
             outFile.write(myData);                    
