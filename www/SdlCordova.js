@@ -1,4 +1,4 @@
-Avar SdlCordova = {
+var SdlCordova = {
 	
 	listeners: {},
 	names: {},
@@ -119,8 +119,8 @@ Avar SdlCordova = {
 
         this.createProxySuccess = opts.success;
         this.appName = opts.appName;
-		this.languageDesired = opts.languageDesired; //hmiDisplayLanguageDesired
-		this.hmiLanguageDesired = opts.hmiLanguageDesired; //added
+		this.languageDesired = opts.languageDesired; 
+		this.hmiLanguageDesired = opts.hmiLanguageDesired; 
 		this.appId = opts.appId;
 		this.majorVersion = opts.majorVersion;
         this.checkAndUpdateProxyCallback(opts);
@@ -139,20 +139,22 @@ Avar SdlCordova = {
 
 		//Jiaxi copied from old file
 		// Optional Params
-        if(opts.ngnMediaScreenAppName){ //not exist
+        if(opts.ngnMediaScreenAppName){
         	params[SdlCordova.names.RPCFields.NGN_MEDIA_SCREEN_APP_NAME] = opts.ngnMediaScreenAppName;
         }
-        if(opts.vrSynonyms){ //not exist
+        if(opts.vrSynonyms){ 
         	params[SdlCordova.names.RPCFields.VR_SYNONYMS] = opts.vrSynonyms;
         }
-        if(opts.sdlMsgVersion){ //not exist
+        if(opts.sdlMsgVersion){ 
         	params[SdlCordova.names.RPCFields.SDL_MSG_VERSION] = opts.sdlMsgVersion;
         }
-		/*if(opts.language){ not needed renamed to languageDesired
-        	params[SdlCordova.Names.RPCFields.LANGUAGE] = opts.language;
-		}*/
-
-		if(opts.autoActivateID){ //not exist
+		if(opts.languageDesired){ 
+        	params[SdlCordova.names.RPCFields.LANGUAGE_DESIRED] = opts.languageDesired;
+		}
+		if(opts.hmiLanguageDesired){
+			params[SdlCordova.names.RPCFields.HMI_LANGUAGE_DESIRED] = opts.hmiLanguageDesired;
+		}
+		if(opts.autoActivateID){
         	params[SdlCordova.names.RPCFields.AUTO_ACTIVATE_ID] = opts.autoActivateID;
 		}
 		if (opts.transportType) {
@@ -1371,7 +1373,7 @@ Avar SdlCordova = {
 		return this.sendRPCRequest(opts, rpcMessage);
 	},
 	
-	readDID:function(correlationId, opts){
+	readDID: function(correlationId, opts){
 		opts = this.extend(opts, SdlCordova.defaultOpts);
 		
 		// Build the request params
@@ -1387,6 +1389,152 @@ Avar SdlCordova = {
 		// Build the request
 		var rpcRequest = {};
 		rpcRequest[SdlCordova.names.function_name] = SdlCordova.names.function_name_readDID;
+		rpcRequest[SdlCordova.names.correlationID] = Number(correlationId);
+		rpcRequest[SdlCordova.names.parameters] = rpcRequestParams;
+		
+		// Build the message
+		var rpcMessage = {};
+		rpcMessage[SdlCordova.names.messageTypeRequest] = rpcRequest;
+		
+		return this.sendRPCRequest(opts, rpcMessage);
+	},
+	
+	showConstantTbt: function(correlationId, opts){
+		opts = this.extend(opts, SdlCordova.defaultOpts);
+		
+		// Build the request params
+		var rpcRequestParams = {};
+		
+		if(opts.navigationText1){
+			rpcRequestParams[SdlCordova.names.navigationText1] = opts.navigationText1;
+		}
+		if(opts.navigationText2){
+			rpcRequestParams[SdlCordova.names.navigationText2] = opts.navigationText2;
+		}
+		if(opts.eta){
+			rpcRequestParams[SdlCordova.names.eta] = opts.eta;
+		}
+		if(opts.totalDistance){
+			rpcRequestParams[SdlCordova.names.totalDistance] = opts.totalDistance;
+		}
+		if(opts.distanceToManeuver){
+			rpcRequestParams[SdlCordova.names.distanceToManeuver] = Number(opts.distanceToManeuver);
+		}
+		if(opts.distanceToManeuverScale){
+			rpcRequestParams[SdlCordova.names.distanceToManeuverScale] = Number(opts.distanceToManeuverScale);
+		}
+		if(opts.turnIcon){
+			rpcRequestParams[SdlCordova.names.turnIcon] = opts.turnIcon;
+		}
+		if(opts.nextTurnIcon){
+			rpcRequestParams[SdlCordova.names.nextTurnIcon] = opts.nextTurnIcon;
+		}
+		if(opts.maneuverComplete){
+			rpcRequestParams[SdlCordova.names.maneuverComplete] = opts.maneuverComplete;
+		}
+		if(opts.timeToDestination){
+			rpcRequestParams[SdlCordova.names.timeToDestination] = opts.timeToDestination;
+		}
+		if(opts.softButtons){
+			rpcRequestParams[SdlCordova.names.softButtons] = this.toArray(opts.softButtons);
+		}
+		
+		// Build the request
+		var rpcRequest = {};
+		rpcRequest[SdlCordova.names.function_name] = SdlCordova.names.function_name_showConstantTbt;
+		rpcRequest[SdlCordova.names.correlationID] = Number(correlationId);
+		rpcRequest[SdlCordova.names.parameters] = rpcRequestParams;
+		
+		// Build the message
+		var rpcMessage = {};
+		rpcMessage[SdlCordova.names.messageTypeRequest] = rpcRequest;
+		
+		return this.sendRPCRequest(opts, rpcMessage);
+	},
+	
+	alertManeuver: function(correlationId, opts){
+		opts = this.extend(opts, SdlCordova.defaultOpts);
+		
+		// Build the request params
+		var rpcRequestParams = {};
+		
+		if(opts.ttsChunks){
+			rpcRequestParams[SdlCordova.names.ttsChunks] = this.toArray(opts.ttsChunks);
+		}
+		if(opts.softButtons){
+			rpcRequestParams[SdlCordova.names.softButtons] = this.toArray(opts.softButtons);
+		}
+		
+		// Build the request
+		var rpcRequest = {};
+		rpcRequest[SdlCordova.names.function_name] = SdlCordova.names.function_name_alertManeuver;
+		rpcRequest[SdlCordova.names.correlationID] = Number(correlationId);
+		rpcRequest[SdlCordova.names.parameters] = rpcRequestParams;
+		
+		// Build the message
+		var rpcMessage = {};
+		rpcMessage[SdlCordova.names.messageTypeRequest] = rpcRequest;
+		
+		return this.sendRPCRequest(opts, rpcMessage);
+	},
+	
+	updateTurnList: function(correlationId, opts){
+		opts = this.extend(opts, SdlCordova.defaultOpts);
+		
+		// Build the request params
+		var rpcRequestParams = {};
+		
+		if(opts.turnList){
+			rpcRequestParams[SdlCordova.names.turnList] = this.toArray(opts.turnList);
+		}
+		if(opts.softButtons){
+			rpcRequestParams[SdlCordova.names.softButtons] = this.toArray(opts.softButtons);
+		}
+		
+		// Build the request
+		var rpcRequest = {};
+		rpcRequest[SdlCordova.names.function_name] = SdlCordova.names.function_name_updateTurnList;
+		rpcRequest[SdlCordova.names.correlationID] = Number(correlationId);
+		rpcRequest[SdlCordova.names.parameters] = rpcRequestParams;
+		
+		// Build the message
+		var rpcMessage = {};
+		rpcMessage[SdlCordova.names.messageTypeRequest] = rpcRequest;
+		
+		return this.sendRPCRequest(opts, rpcMessage);
+	},
+	
+	sendLocation: function(correlationId, opts){
+		opts = this.extend(opts, SdlCordova.defaultOpts);
+		
+		// Build the request params
+		var rpcRequestParams = {};
+		
+		if(opts.latitudeDegrees){
+			rpcRequestParams[SdlCordova.names.latitudeDegrees] = Number(opts.latitudeDegrees);
+		}
+		if(opts.longitudeDegrees){
+			rpcRequestParams[SdlCordova.names.longitudeDegrees] = Number(opts.longitudeDegrees);
+		}
+		if(opts.locationName){
+			rpcRequestParams[SdlCordova.names.locationName] = opts.locationName;
+		}
+		if(opts.locationDescription){
+			rpcRequestParams[SdlCordova.names.locationDescription] = opts.locationDescription;
+		}
+		if(opts.phoneNumber){
+			rpcRequestParams[SdlCordova.names.phoneNumber] = opts.phoneNumber;
+		}
+		if(opts.addressLines){
+			rpcRequestParams[SdlCordova.names.addressLines] = this.toArray(opts.addressLines);
+		}
+		if(opts.locationImage){
+			rpcRequestParams[SdlCordova.names.locationImage] = opts.locationImage;
+		}
+		
+		// Build the request
+		var rpcRequest = {};
+		rpcRequest[SdlCordova.names.function_name] = SdlCordova.names.function_name_sendLocation;
 		rpcRequest[SdlCordova.names.correlationID] = Number(correlationId);
 		rpcRequest[SdlCordova.names.parameters] = rpcRequestParams;
 		
@@ -1491,7 +1639,7 @@ Avar SdlCordova = {
 		opts = this.extend(opts, SdlCordova.defaultOptsNonRPC);
 		
 		return cordova.exec(opts.success, opts.error, "SdlCordova", SdlCordova.names.ACTION_ENABLE_DEBUG_TOOL, [null]);
-	},	
+	},
 	
 	/*****************************
 	 * Proxy functions
@@ -1628,6 +1776,22 @@ Avar SdlCordova = {
 	onReadDIDResponse: function(f){
 		this.bind(SdlCordova.names.function_name_readDID, f);
 	},
+	
+	onShowConstantTbtResponse: function(f){
+		this.bind(SdlCordova.names.function_name_showConstantTbt, f);
+	},
+	
+	onAlertManeuverResponse: function(f){
+		this.bind(SdlCordova.names.function_name_alertManeuver, f);
+	},
+	
+	onUpdateTurnListResponse: function(f){
+		this.bind(SdlCordova.names.function_name_updateTurnList, f);
+	},
+	
+	onSendLocationResponse: function(f){
+		this.bind(SdlCordova.names.function_name_sendLocation, f);
+	},
 	//end
 	
 	onOnButtonEvent: function(f){
@@ -1735,6 +1899,11 @@ KeyboardProperties: function(keypressMode, keyboardLayout, limitedCharacterList,
 	this[SdlCordova.names.limitedCharacterList] = limitedCharacterList;
 	this[SdlCordova.names.autoCompleteText] = autoCompleteText;
 	this[SdlCordova.names.language] = language;
+},
+
+Turn: function(navigationText, turnIcon){
+	this[SdlCordova.names.navigationText] = navigationText;
+	this[SdlCordova.names.turnIcon] = turnIcon;
 }
 };
 
@@ -1750,7 +1919,8 @@ SdlCordova.names.RPCFields = {
 		SDL_MSG_VERSION: "syncMsgVersion",
 		MAJOR_VERISON: "majorVersion",
 		MINOR_VERISON: "minorVersion",
-		LANGUAGE: "language",
+		LANGUAGE_DESIRED: "languageDesired",
+		HMI_LANGUAGE_DESIRED: "hmiLanguageDesired",
 		AUTO_ACTIVATE_ID: "autoActivateID",
 		TRANSPORT_TYPE: "transportType",
 		TCP_PORT: "tcpPort",
@@ -2006,6 +2176,10 @@ SdlCordova.names.correlationID = "correlationID";
 	SdlCordova.names.function_name_changeRegistration = "ChangeRegistration";
 	SdlCordova.names.function_name_slider = "Slider";
 	SdlCordova.names.function_name_readDID = "ReadDID";
+	SdlCordova.names.function_name_showConstantTbt = "ShowConstantTBT"; // was ShowConstantTbt 
+	SdlCordova.names.function_name_alertManeuver = "AlertManeuver";
+	SdlCordova.names.function_name_updateTurnList = "UpdateTurnList";
+	SdlCordova.names.function_name_sendLocation = "SendLocation";
 	
 	// Notifications
 	SdlCordova.names.RPC_NOTIFICATION_onCommand = "OnCommand";
@@ -2109,6 +2283,37 @@ SdlCordova.names.correlationID = "correlationID";
 	//ReadDID (added)
 	//SdlCordova.names.ecuName = "ecuName";
 	SdlCordova.names.didLocation = "didLocation";
+	
+	//ShowConstantTbt
+	SdlCordova.names.navigationText1 = "navigationText1";
+    SdlCordova.names.navigationText2 = "navigationText2";
+    SdlCordova.names.eta = "eta";
+    SdlCordova.names.totalDistance = "totalDistance";
+    SdlCordova.names.distanceToManeuver = "distanceToManeuver";
+    SdlCordova.names.distanceToManeuverScale = "distanceToManeuverScale";
+    SdlCordova.names.turnIcon = "turnIcon";
+    SdlCordova.names.nextTurnIcon = "nextTurnIcon";
+    SdlCordova.names.maneuverComplete = "maneuverComplete";
+    //SdlCordova.names.softButtons = "softButtons";
+    SdlCordova.names.timeToDestination = "timeToDestination";
+	
+	//Turn
+	SdlCordova.names.navigationText = "navigationText";
+	SdlCordova.names.turnIcon = "turnIcon";
+	
+	//UpdateTurnList
+	SdlCordova.names.turnList = "turnList";
+	
+	//SendLocation
+	SdlCordova.names.latitudeDegrees = "latitudeDegrees";
+	SdlCordova.names.longitudeDegrees = "longitudeDegrees";
+	SdlCordova.names.locationName = "locationName";
+	SdlCordova.names.locationDescription = "locationDescription";
+	SdlCordova.names.addressLines = "addressLines";
+	SdlCordova.names.phoneNumber = "phoneNumber";
+	SdlCordova.names.locationImage = "locationImage";
+
+	
 	
 /*************** Default Parameters *****************/
 // Global

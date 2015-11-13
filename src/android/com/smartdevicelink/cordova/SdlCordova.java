@@ -1,5 +1,6 @@
 package com.smartdevicelink.cordova;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.List;
@@ -12,6 +13,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+
+
+
+
 
 
 //Post Cordova 3.0 Imports
@@ -42,6 +47,7 @@ import com.smartdevicelink.cordova.constants.ProxyEvents;
 import com.smartdevicelink.cordova.utils.JSONtoJavaClassConverter;
 import com.smartdevicelink.exception.SdlException;
 import com.smartdevicelink.marshal.JsonRPCMarshaller;
+import com.smartdevicelink.protocol.enums.FunctionID;
 import com.smartdevicelink.proxy.RPCMessage;
 import com.smartdevicelink.proxy.RPCRequest;
 import com.smartdevicelink.proxy.RPCResponse;
@@ -132,7 +138,13 @@ import com.smartdevicelink.proxy.rpc.enums.SpeechCapabilities;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.VrCapabilities;
 import com.smartdevicelink.transport.SiphonServer;
+import com.smartdevicelink.transport.TCPTransportConfig;
+import com.smartdevicelink.transport.enums.TransportType;
 import com.smartdevicelink.util.DebugTool; 
+
+
+
+
 
 
 
@@ -176,7 +188,7 @@ public class SdlCordova extends CordovaPlugin {
 	private static File filePath = null;
 	private static String fileName = null;
 	private static String fileExt = "pcm";
-	private static OutputStream audioPassThruOutStream = null;
+	private static ArrayList<byte[]> audioPassThruOutArrayList = new ArrayList<byte[]>();
 	private static boolean oktosave = false;
 	
 	// for PutFile
@@ -351,7 +363,7 @@ public class SdlCordova extends CordovaPlugin {
 		// Future
 		Language hmiLanguageDesired = null;
 		String appId = null; // V2 - null until V2
-		TransportType transportType = Const.Transport.KEY_BLUETOOTH; // V2
+		TransportType transportType = TransportType.BLUETOOTH; // V2
 		TCPTransportConfig transportConfig = null; // V2
 
 		// Get args from array
@@ -411,9 +423,9 @@ public class SdlCordova extends CordovaPlugin {
 						.getString(CordovaParameters.autoActivateID);
 			}
 			
-			if (argumentsObject.has(CordovaParameters.transportType) && argumentsObject.getString(CordovaParameters.transportType == 'TCP') {
-				transportType = Const.Transport.KEY_TCP;
-				String tcpPort = argumentsObject.getString(CordovaParameters.tcpPort);
+			if (argumentsObject.has(CordovaParameters.transportType) && argumentsObject.getString(CordovaParameters.transportType).equals("TCP")) {
+				transportType = TransportType.TCP;
+				int tcpPort = argumentsObject.getInt(CordovaParameters.tcpPort);
 				String ipAddress = argumentsObject.getString(CordovaParameters.ipAddress);
 				Boolean autoReconnect = true; // hardcoded for now
 				transportConfig = new TCPTransportConfig(tcpPort, ipAddress, autoReconnect);
@@ -434,7 +446,7 @@ public class SdlCordova extends CordovaPlugin {
 					+ " hmiLanguageDesired: " + hmiLanguageDesired + " appID: "
 					+ appId);
 			
-			if (transportConfig != null) {
+			if (transportConfig == null) {
 				// Create SdlProxy with minimal parameters.. for bluetooth connection
 				sdlProxy = new SdlProxyALM(proxyListener, appName, ngnMediaScreenAppName, vrSynonyms, isMediaApp, sdlMsgVersion,
 						languageDesired, hmiLanguageDesired, appId, autoActivateID);
@@ -1325,26 +1337,40 @@ public class SdlCordova extends CordovaPlugin {
 				byte[] code = null;
 				Hashtable<String, Object> function = (Hashtable<String, Object>) hash.get("request"); //name, correlationId, parameters
 				String functionName = String.valueOf(function.get("name"));
-				if(functionName.equals(Names.PutFile) || functionName.equals(Names.PerformAudioPassThru)){
+				if(functionName.equals(FunctionID.PUT_FILE.toString()) || functionName.equals(FunctionID.PERFORM_AUDIO_PASS_THRU.toString())){
 					Hashtable<String, Object> parameters = (Hashtable<String, Object>)function.get("parameters"); 
-					if(functionName.equals(Names.PutFile)){//PutFile -- fileType, syncFileName, fileData
+					if(functionName.equals(FunctionID.PUT_FILE.toString())){//PutFile -- fileType, syncFileName, fileData
 						String temp = (String)parameters.get("fileData");
 						// take out header
 						temp = temp.substring(temp.indexOf(",")+1);
 						code = Base64.decode(temp, Base64.DEFAULT);
 						//parameters.put("bulkData", Base64.decode(temp, Base64.DEFAULT));
 					}
-					else if(functionName.equals(Names.PerformAudioPassThru)){
+					else if(functionName.equals(FunctionID.PERFORM_AUDIO_PASS_THRU.toString())){
 						String temp = (String)parameters.get("filename");
 						filePath = new File (temp.substring(0, temp.lastIndexOf("/")));
+						if(!filePath.canWrite()){
+							oktosave = false;
+							String errorString = "Directory " + filePath + " is not writable.";
+							if (callbackContext != null) {
+								callbackContext.error(errorString);
+							} else {
+								Log.e(logTag, LogStrings.callbackContextMissing);
+							}
+						}
 						fileName = temp.substring(temp.lastIndexOf("/")+1, temp.lastIndexOf("."));
 						fileExt = temp.substring(temp.lastIndexOf(".")+1);
-						if(fileExt.toLowerCase().equals("pcm") || fileExt.toLowerCase().equals("wav")){
+						if(fileExt.toLowerCase().equals("pcm") || fileExt.toLowerCase().equals("wav")){//TO DO: CHANGE PCM,  WAV TO SESSION TYPE ENUMS
 							oktosave = true;
 						}
 						else{
 							oktosave = false;
-							logToConsoleAndUI(fileExt + " is not supported!", null);
+							String errorString = fileExt + " is not supported!";
+							if (callbackContext != null) {
+								callbackContext.error(errorString);
+							} else {
+								Log.e(logTag, LogStrings.callbackContextMissing);
+							}
 						}
 						if(oktosave){
 							mySampleRate = getSampleRate((String)parameters.get("samplingRate"));
@@ -1379,25 +1405,17 @@ public class SdlCordova extends CordovaPlugin {
 		try {
 			if (rpcRequest.getFunctionName() == null) {
 				Log.w(logTag,
-						"Could not determine RPC funtion name. Could not save to persistentSdlData.");
+						"Could not determine RPC funtion name.");
 			} else {
-				if (rpcRequest.getFunctionName().equals(Names.AddCommand)
-						|| rpcRequest.getFunctionName().equals(
-								Names.DeleteCommand)
-						|| rpcRequest.getFunctionName()
-								.equals(Names.AddSubMenu)
-						|| rpcRequest.getFunctionName().equals(
-								Names.DeleteSubMenu)
-						|| rpcRequest.getFunctionName().equals(
-								Names.CreateInteractionChoiceSet)
-						|| rpcRequest.getFunctionName().equals(
-								Names.DeleteInteractionChoiceSet)
-						|| rpcRequest.getFunctionName().equals(
-								Names.SubscribeButton)
-						|| rpcRequest.getFunctionName().equals(
-								Names.UnsubscribeButton)
-						|| rpcRequest.getFunctionName().equals(
-								Names.PutFile)) {
+				if (rpcRequest.getFunctionName().equals(FunctionID.ADD_COMMAND.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.DELETE_COMMAND.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.ADD_SUB_MENU.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.DELETE_SUB_MENU.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.CREATE_INTERACTION_CHOICE_SET.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.DELETE_INTERACTION_CHOICE_SET.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.SUBSCRIBE_BUTTON.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.UNSUBSCRIBE_BUTTON.toString())
+						|| rpcRequest.getFunctionName().equals(FunctionID.PUT_FILE.toString())) {
 
 					// Ensure that correlationID is not null and
 					// pendingRPCRequests does not have an entry for this
@@ -1921,17 +1939,8 @@ public class SdlCordova extends CordovaPlugin {
 		}
 
 		public void onEndAudioPassThruResponse(EndAudioPassThruResponse response) {
-			closeAudioPassThruStream();
-			if (response.getSuccess() == true && oktosave)
-			{
-				if(fileExt.toLowerCase().equals("wav")){
-					saveAsWav();
-					deletePCM();
-				}
-			}		
-			else{
-				deletePCM();
-			}	
+			if (response.getSuccess() == true && oktosave)     
+				saveAsAudioFile(); 
 			sendRPCCallback(getRPCInfo(response));
 		}
 
@@ -1949,36 +1958,8 @@ public class SdlCordova extends CordovaPlugin {
 
 		public void onOnAudioPassThru(OnAudioPassThru notification) {
 			byte[] aptData = notification.getBulkData();
-			
-			// get data length
-			if (aptData == null) {
-				Log.w(logTag, "onAudioPassThru aptData is null");
-				return;
-			}
-			Log.i(logTag, "data len " + aptData.length);
 			iByteCount = iByteCount + aptData.length;
-			
-			// write to file
-			//File outFile = audioPassThruOutputFile(PCM);
-			File outFile = new File(filePath, fileName + ".pcm");
-			try {
-				if (audioPassThruOutStream == null) {
-					audioPassThruOutStream = new BufferedOutputStream(
-							new FileOutputStream(outFile, false));
-				}
-				audioPassThruOutStream.write(aptData);
-				audioPassThruOutStream.flush();
-			} catch (FileNotFoundException e) {
-				oktosave = false;
-				logToConsoleAndUI(
-						"Output file "
-								+ (outFile != null ? outFile.toString()
-										: "'unknown'")
-								+ " can't be opened for writing", e);
-			} catch (IOException e) {
-				oktosave = false;
-				logToConsoleAndUI("Can't write to output file", e);
-			}
+			audioPassThruOutArrayList.add(aptData);
 			
 			sendRPCCallback(getRPCInfo(notification));
 		}
@@ -1996,19 +1977,8 @@ public class SdlCordova extends CordovaPlugin {
 		}
 
 		public void onPerformAudioPassThruResponse(PerformAudioPassThruResponse response) {
-			closeAudioPassThruStream();
-					
-			if (response.getSuccess() == true && oktosave)
-			{
-				if(fileExt.toLowerCase().equals("wav")){
-					saveAsWav();
-					deletePCM();
-				}
-			}		
-			else{
-				deletePCM();
-			}	
-			
+			if (response.getSuccess() == true && oktosave)     
+				saveAsAudioFile(); 
 			sendRPCCallback(getRPCInfo(response));
 		}
 
@@ -2072,96 +2042,90 @@ public class SdlCordova extends CordovaPlugin {
 		/********************* End Simulated Callbacks *************************/
 
 		@Override
-		public void onDiagnosticMessageResponse(DiagnosticMessageResponse arg0) {
+		public void onDiagnosticMessageResponse(DiagnosticMessageResponse arg0) { //3.0
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void onOnHashChange(OnHashChange arg0) {
+		public void onOnHashChange(OnHashChange arg0) { //3.0
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void onOnKeyboardInput(OnKeyboardInput arg0) {
+		public void onOnKeyboardInput(OnKeyboardInput arg0) { //3.0
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void onOnLockScreenNotification(OnLockScreenStatus arg0) {
+		public void onOnLockScreenNotification(OnLockScreenStatus arg0) { //3.0
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void onOnSystemRequest(OnSystemRequest arg0) {
-			// TODO Auto-generated method stub
-
+		public void onOnSystemRequest(OnSystemRequest notification) { // 2.0
+			sendRPCCallback(getRPCInfo(notification));
 		}
 
 		@Override
-		public void onOnTouchEvent(OnTouchEvent arg0) {
-			// TODO Auto-generated method stub
-
+		public void onOnTouchEvent(OnTouchEvent notification) { // 2.0
+			sendRPCCallback(getRPCInfo(notification));
 		}
-		public void onSystemRequestResponse(SystemRequestResponse arg0) {
-			// TODO Auto-generated method stub
-
+		public void onSystemRequestResponse(SystemRequestResponse response) { // 2.0
+			sendRPCCallback(getRPCInfo(response));
 		}
 		
 		//added
-		public void onSendLocationResponse(SendLocationResponse arg0) {
+		public void onSendLocationResponse(SendLocationResponse response) { // 2.0
+			sendRPCCallback(getRPCInfo(response));
+		}
+		
+		public void onDialNumberResponse(DialNumberResponse response) { // 2.0
+			sendRPCCallback(getRPCInfo(response));
+		}
+		
+		public void onStreamRPCResponse(StreamRPCResponse arg0) { // 3.0
 			// TODO
 		}
 		
-		public void onDialNumberResponse(DialNumberResponse arg0) {
-			// TODO
-		}
-		
-		public void onStreamRPCResponse(StreamRPCResponse arg0) {
-			// TODO
-		}
-		
-		public void onOnStreamRPC(OnStreamRPC arg0) {
+		public void onOnStreamRPC(OnStreamRPC arg0) { // 3.0
 			// TODO
 		}
 
 		@Override
-		public void onAlertManeuverResponse(AlertManeuverResponse arg0) {
+		public void onAlertManeuverResponse(AlertManeuverResponse response) { // 2.0
+			sendRPCCallback(getRPCInfo(response));
+		}
+
+		@Override
+		public void onServiceDataACK() { // 3.0
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void onServiceDataACK() {
+		public void onServiceEnded(OnServiceEnded arg0) { // 3.0
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void onServiceEnded(OnServiceEnded arg0) {
+		public void onServiceNACKed(OnServiceNACKed arg0) { // 3.0
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void onServiceNACKed(OnServiceNACKed arg0) {
-			// TODO Auto-generated method stub
-			
+		public void onShowConstantTbtResponse(ShowConstantTbtResponse response) { // 2.0
+			sendRPCCallback(getRPCInfo(response));
 		}
 
 		@Override
-		public void onShowConstantTbtResponse(ShowConstantTbtResponse arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void onUpdateTurnListResponse(UpdateTurnListResponse arg0) {
-			// TODO Auto-generated method stub
-			
+		public void onUpdateTurnListResponse(UpdateTurnListResponse response) { // 2.0
+			sendRPCCallback(getRPCInfo(response));
 		}
 
 	};
@@ -2209,33 +2173,13 @@ public class SdlCordova extends CordovaPlugin {
 		}*/    	
 		return iReturn;    	
 	}
-	
-	private static void deletePCM(){
-		File outFile = new File(filePath, fileName + ".pcm");
-		if ((outFile != null) && outFile.exists()) {
-			if (!outFile.delete()) {
-				logToConsoleAndUI("Failed to delete output file", null);
-			}
-		}
-	}
+
 	
 	private static void logToConsoleAndUI(String msg, Throwable thr) {
 		Log.d(logTag, msg, thr);
 		//Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
 	}
 	
-	private static void closeAudioPassThruStream() {
-		if (audioPassThruOutStream != null) {
-			Log.d(logTag, "closing audioPassThruOutStream");
-			try {
-				audioPassThruOutStream.flush();
-				audioPassThruOutStream.close();
-			} catch (IOException e) {
-				Log.w(logTag, "Can't close output file", e);
-			}
-			audioPassThruOutStream = null;
-		}
-	}
 	
 	private static byte[] WriteWaveFileHeader(DataOutputStream out, long totalAudioLen,
             						  long totalDataLen, long longSampleRate, int channels, long byteRate) 
@@ -2288,30 +2232,38 @@ public class SdlCordova extends CordovaPlugin {
 		return header;		      
 	}
 	
-	private static boolean saveAsWav(){
-		try
-        {                                         
-			byte[] myData;        
-            DataOutputStream outFile  = new DataOutputStream(new FileOutputStream(new File(filePath, fileName + ".wav")));                                     
-            long totalAudioLen = iByteCount;
-            long totalDataLen = totalAudioLen + 36;
-            long longSampleRate = mySampleRate;
-            int channels = 1;
-            long byteRate =  mySampleRate * channels * myBitsPerSample/8;
-            byte[] header = WriteWaveFileHeader(outFile, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);                                    
-            outFile.write(header, 0, 44);
-            DataInputStream inFile = new DataInputStream(new FileInputStream(new File(filePath, fileName + ".pcm")));
-            myData = new byte[iByteCount];
-            inFile.read(myData);                                        
-            outFile.write(myData);                    
-            inFile.close();
-            outFile.close();
-        }
-        catch(Exception e)
-        {
-        	e.printStackTrace();
-            return false;
-        }
-        return true;
+	private static void saveAsAudioFile(){
+		DataOutputStream outFile;
+		try {
+			//delete file if exist
+			File myFile = new File(filePath, fileName +"."+ fileExt);
+			if ((myFile != null) && myFile.exists()) {
+				if (!myFile.delete()) {
+					logToConsoleAndUI("Failed to delete output file", null);
+				}
+			}
+			
+			//save the file
+			outFile = new DataOutputStream(new FileOutputStream(myFile));
+			if(fileExt.toLowerCase().equals("wav")){
+				long totalAudioLen = iByteCount;
+	            long totalDataLen = totalAudioLen + 36;
+	            long longSampleRate = mySampleRate;
+	            int channels = 1;
+	            long byteRate =  mySampleRate * channels * myBitsPerSample/8;
+	            byte[] header = WriteWaveFileHeader(outFile, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);                                    
+	            outFile.write(header, 0, 44);
+			}
+			for (int i = 0; i < audioPassThruOutArrayList.size(); i++) {
+				outFile.write(audioPassThruOutArrayList.get(i));
+			}
+			outFile.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}       
     }    
 }
