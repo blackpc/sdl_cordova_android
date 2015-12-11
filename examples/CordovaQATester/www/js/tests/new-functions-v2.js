@@ -163,18 +163,18 @@ testManager.addTest({
 		performAudio.setError(function(e){
 			prependLogError("performAudio send error" + e);
 		});	
-		performAudio.setMaxDuration(30000);
+		performAudio.setMaxDuration(8000);
 		performAudio.setAudioPassThruDisplayText("Test Audio Pass Through", "Second line");
 		performAudio.setInitialText("This is PerformAudio initial text.");
 		performAudio.setSamplingRate("16KHZ");
 		performAudio.setAudioType("PCM");
 		performAudio.setBitsPerSample("8_BIT");
-		performAudio.setFilename("/storage/emulated/0/SYNC/myaudio2.pcm");
+		performAudio.setFilename("/storage/emulated/0/SYNC/myaudio3.wav");
 		SdlCordovaFactory.onCorrelationId(performAudio.getCorrelationId(), function(info){
 			prependLog(info);
 			//sendRPC(endAudio);
 		});	
-		sendRPC(performAudio);
+		//sendRPC(performAudio);
 		
 		/* SubscribeVehicleData
 			new API
@@ -309,6 +309,58 @@ testManager.addTest({
 		slider.addSliderFooter("Footer2");
 		//sendRPC(slider);
 		
+		/* ShowConstantTbt
+			new API
+		*/
+		var showtbt = new SdlCordovaFactory.ShowConstantTbt();
+		showtbt.setCorrelationId(++nextCorrelationId);
+		showtbt.setSuccess(function(){
+			prependLog("showtbt sent successfully " + showtbt.getCorrelationId());
+		});
+		showtbt.setError(function(e){
+			prependLogError("showtbt send error " + e);
+		});
+		showtbt.setNavigationText1("Navigation 1");
+		showtbt.setNavigationText2("Navigation 2");
+		showtbt.setEta("12:00");
+		showtbt.setTotalDistance("100 Miles");
+		showtbt.setDistanceToManeuver(50.1);
+		showtbt.setDistanceToManeuverScale(100.1);
+		showtbt.setTurnIcon(new SdlCordova.Image("action.jpg", SdlCordova.names.imagetype_dynamic));
+		showtbt.setNextTurnIcon(new SdlCordova.Image("action.jpg", SdlCordova.names.imagetype_dynamic));
+		showtbt.addSoftButton(new SdlCordova.SoftButton(false, 1, SdlCordova.names.action_DEFAULT_ACTION, "ShowTBT", SdlCordova.names.softButtonType_TEXT));
+		//sendRPC(showtbt);
+		
+		/* AlertManeuver
+			new API
+		*/
+		var alertManeuver = new SdlCordovaFactory.AlertManeuver();
+		alertManeuver.setCorrelationId(++nextCorrelationId);
+		alertManeuver.setSuccess(function(){
+			prependLog("alertManeuver sent successfully " + alertManeuver.getCorrelationId());
+		});
+		alertManeuver.setError(function(e){
+			prependLogError("alertManeuver send error " + e);
+		});
+		alertManeuver.setTTSText("This is a test for AlertManeuver");
+		alertManeuver.addSoftButton(new SdlCordova.SoftButton(false, 1, SdlCordova.names.action_DEFAULT_ACTION, "AlertManeuver", SdlCordova.names.softButtonType_TEXT));
+		//sendRPC(alertManeuver);
+		
+		/* UpdateTurnList
+			new API
+		*/
+		var updateTurn = new SdlCordovaFactory.UpdateTurnList();
+		updateTurn.setCorrelationId(++nextCorrelationId);
+		updateTurn.setSuccess(function(){
+			prependLog("updateTurn sent successfully " + updateTurn.getCorrelationId());
+		});
+		updateTurn.setError(function(e){
+			prependLogError("updateTurn send error " + e);
+		});
+		updateTurn.addTurnList(new SdlCordova.Turn("Updated Turn", new SdlCordova.Image("action.jpg", SdlCordova.names.imagetype_dynamic)));
+		updateTurn.addSoftButton(new SdlCordova.SoftButton(false, 1, SdlCordova.names.action_DEFAULT_ACTION, "Update Turn", SdlCordova.names.softButtonType_TEXT));
+		//sendRPC(updateTurn);
+		
 		/* ChangeRegistration
 			new API
 		*/
@@ -394,8 +446,11 @@ testManager.addTest({
 							//sendRPC(listFiles);
 							//prependLog("send add command 2");
 							//sendRPC(cmd2);
+							/*sendRPC(showtbt);
+							sendRPC(updateTurn);*/
+							sendRPC(sendloc);
 						});
-						//sendRPC(put);
+						sendRPC(put);
 					} catch(err){
 						console.log("[ERROR]: " + err);
 					}
@@ -442,6 +497,27 @@ testManager.addTest({
 		});
 		layout.setDisplayLayout("DEFAULT");
 		//sendRPC(layout);
+		
+		/* SendLocation
+			new API
+		*/
+		var sendloc = new SdlCordovaFactory.SendLocation();
+		sendloc.setCorrelationId(++nextCorrelationId);
+		sendloc.setSuccess(function(){
+			prependLog("sendloc sent successfully " + sendloc.getCorrelationId());
+		});
+		sendloc.setError(function(e){
+			prependLogError("sendloc send error " + e);
+		});
+		sendloc.setLatitudeDegrees(55.5);
+		sendloc.setLongitudeDegrees(22.2);
+		sendloc.setLocationName("Location Name");
+		sendloc.setLocationDescription("Location Desc");
+		sendloc.setPhoneNumber("8675309");
+		sendloc.setAddressLines(["address 1", "address 2"]);
+		sendloc.setlocationImage(new SdlCordova.Image("action.jpg", SdlCordova.names.imagetype_dynamic));
+		//sendRPC(sendloc);
+		
 	
 		if(rpcSendErrorCount == 0 && responseErrorCount == 0){ // test passed
 			var show2 = new SdlCordovaFactory.Show();
