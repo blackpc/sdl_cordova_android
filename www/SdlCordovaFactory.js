@@ -2049,6 +2049,285 @@ function ReadDID(){
 ReadDID.prototype = Object.create(RPCBase.prototype);
 factory.ReadDID = ReadDID;
 
+function ShowConstantTbt(){
+	RPCBase.call(this);
+	
+	this.functionName = "showConstantTbt";
+	this.navigationText1 = null;
+    this.navigationText2 = null;
+    this.eta = null;
+    this.totalDistance = null;
+    this.distanceToManeuver = null;
+    this.distanceToManeuverScale = null;
+    this.turnIcon = null;
+    this.nextTurnIcon = null;
+    this.maneuverComplete = null;
+    this.softButtons = null;
+    this.timeToDestination = null;
+	
+	this.setNavigationText1 = function(navigationText1){
+		this.navigationText1 = navigationText1;
+	};
+	
+	this.setNavigationText2 = function(navigationText2){
+		this.navigationText2 = navigationText2;
+	};
+	
+	this.setEta = function(eta){
+		this.eta = eta;
+	};
+	
+	this.setTotalDistance = function(totalDistance){
+		this.totalDistance = totalDistance;
+	};
+	
+	this.setDistanceToManeuver = function(distanceToManeuver){
+		this.distanceToManeuver = distanceToManeuver;
+	};
+	
+	this.setDistanceToManeuverScale = function(distanceToManeuverScale){
+		this.distanceToManeuverScale = distanceToManeuverScale;
+	};
+	
+	this.setTurnIcon = function(turnIcon){
+		this.turnIcon = turnIcon;
+	};
+	
+	this.setNextTurnIcon = function(nextTurnIcon){
+		this.nextTurnIcon = nextTurnIcon;
+	};
+	
+	this.setManeuverComplete = function(maneuverComplete){
+		this.maneuverComplete = maneuverComplete;
+	};
+	
+	this.setSoftButtons = function(softButtonArray){
+		this.softButtons = softButtonArray ? SdlCordova.toArray(softButtonArray) : null;
+	};
+	
+	this.addSoftButton = function(button){
+		if(this.softButtons == null)
+			this.softButtons = [button];
+		else
+			this.softButtons.push(button);
+	};
+	
+	this.setTimeToDestination = function(timeToDestination){
+		this.timeToDestination = timeToDestination;
+	};
+	
+	this.getNavigationText1 = function(){
+		return this.navigationText1;
+	};
+	
+	this.getNavigationText2 = function(){
+		return this.navigationText2;
+	};
+	
+	this.getEta = function(){
+		return this.eta;
+	};
+	
+	this.getTotalDistance = function(){
+		return this.totalDistance;
+	};
+	
+	this.getDistanceToManeuver = function(){
+		return this.distanceToManeuver;
+	};
+	
+	this.getDistanceToManeuverScale = function(){
+		return this.distanceToManeuverScale;
+	};
+	
+	this.getTurnIcon = function(){
+		return this.turnIcon;
+	};
+	
+	this.getNextTurnIcon = function(){
+		return this.nextTurnIcon;
+	};
+	
+	this.getManeuverComplete = function(){
+		return this.maneuverComplete;
+	};
+	
+	this.getSoftButtons = function(){
+		return this.softButtons;
+	};
+	
+	this.getTimeToDestination = function(){
+		return this.timeToDestination;
+	};
+}
+ShowConstantTbt.prototype = Object.create(RPCBase.prototype);
+factory.ShowConstantTbt = ShowConstantTbt;
+
+function AlertManeuver(){
+	RPCBase.call(this);
+	
+	this.functionName = "alertManeuver";
+	this.ttsChunks = null;
+    this.softButtons = null;
+	
+	this.setTTSText = function(text){
+		this.ttsChunks = [new SdlCordova.TTSChunk(SdlCordova.names.speechCapabilities_TEXT, text)];
+	};
+	
+	this.setTTSChunks = function(ttsChunkArray){
+		this.ttsChunks = ttsChunkArray ? SdlCordova.toArray(ttsChunkArray) : null;
+	};
+	
+	this.addTTSChunk = function(chunk){
+		if(this.ttsChunks == null){
+			this.ttsChunks = [chunk];
+		}else{
+			this.ttsChunks.push(chunk);
+		}		
+	};
+	
+	this.setSoftButtons = function(softButtonArray){
+		this.softButtons = softButtonArray ? SdlCordova.toArray(softButtonArray) : null;
+	};
+	
+	this.addSoftButton = function(button){
+		if(this.softButtons == null)
+			this.softButtons = [button];
+		else
+			this.softButtons.push(button);
+	};
+	
+	this.getTTSChunks = function(){
+		return this.ttsChunks;
+	};
+	
+	this.getSoftButtons = function(){
+		return this.softButtons;
+	};
+	
+}
+AlertManeuver.prototype = Object.create(RPCBase.prototype);
+factory.AlertManeuver = AlertManeuver;
+
+function UpdateTurnList(){
+	RPCBase.call(this);
+	
+	this.functionName = "updateTurnList";
+	this.turnList = null;
+    this.softButtons = null;
+	
+	this.setTurnList = function(turnArray){
+		this.turnList = turnArray ? SdlCordova.toArray(turnArray) : null;
+	};
+	
+	this.addTurnList = function(turn){
+		if(this.turnList == null)
+			this.turnList = [turn];
+		else
+			this.turnList.push(turn);
+	};
+	
+	this.setSoftButtons = function(softButtonArray){
+		this.softButtons = softButtonArray ? SdlCordova.toArray(softButtonArray) : null;
+	};
+	
+	this.addSoftButton = function(button){
+		if(this.softButtons == null)
+			this.softButtons = [button];
+		else
+			this.softButtons.push(button);
+	};
+	
+	this.getTurnList = function(){
+		return this.turnList;
+	};
+	
+	this.getSoftButtons = function(){
+		return this.softButtons;
+	};
+}
+UpdateTurnList.prototype = Object.create(RPCBase.prototype);
+factory.UpdateTurnList = UpdateTurnList;
+
+function SendLocation(){
+	RPCBase.call(this);
+	
+	this.functionName = "sendLocation";
+	this.latitudeDegrees = null;
+    this.longitudeDegrees = null;
+    this.locationName = null;
+    this.locationDescription = null;
+    this.phoneNumber = null;
+    this.addressLines = null;
+    this.locationImage = null;
+	
+	this.setLatitudeDegrees = function(latitudeDegrees){
+		this.latitudeDegrees = latitudeDegrees;
+	};
+	
+	this.setLongitudeDegrees = function(longitudeDegrees){
+		this.longitudeDegrees = longitudeDegrees;
+	};
+	
+	this.setLocationName = function(locationName){
+		this.locationName = locationName;
+	};
+	
+	this.setLocationDescription = function(locationDescription){
+		this.locationDescription = locationDescription;
+	};
+	
+	this.setPhoneNumber = function(phoneNumber){
+		this.phoneNumber = phoneNumber;
+	};
+	
+	this.setAddressLines = function(addressArray){
+		this.addressLines = addressArray ? SdlCordova.toArray(addressArray) : null;
+	};
+	
+	this.addAddressLines = function(address){
+		if(this.addressLines == null){
+			this.addressLines = [address];
+		}else{
+			this.addressLines.push(address);
+		}		
+	};
+	
+	this.setlocationImage = function(locationImage){
+		this.locationImage = locationImage;
+	};
+	
+	this.getLatitudeDegrees = function(){
+		return this.latitudeDegrees;
+	};
+	
+	this.getLongitudeDegrees = function(){
+		return this.longitudeDegrees;
+	};
+	
+	this.getLocationName = function(){
+		return this.locationName;
+	};
+	
+	this.getLocationDescription = function(){
+		return this.locationDescription;
+	};
+	
+	this.getPhoneNumber = function(){
+		return this.phoneNumber;
+	};
+	
+	this.getAddressLines = function(){
+		return this.addressLines;
+	};
+	
+	this.getlocationImage = function(){
+		return this.locationImage;
+	};
+}
+SendLocation.prototype = Object.create(RPCBase.prototype);
+factory.SendLocation = SendLocation;
+
 // end added
 function isValidTTSChunkType(type){
 	switch(type){
@@ -2259,5 +2538,9 @@ SdlCordova.onSetDisplayLayoutResponse(proxyListener);
 SdlCordova.onGetDTCsResponse(proxyListener);
 SdlCordova.onSliderResponse(proxyListener);
 SdlCordova.onReadDIDResponse(proxyListener);
+SdlCordova.onShowConstantTbtResponse(proxyListener);
+SdlCordova.onAlertManeuverResponse(proxyListener);
+SdlCordova.onUpdateTurnListResponse(proxyListener);
+SdlCordova.onSendLocationResponse(proxyListener);
 SdlCordova.onOnPermissionsChange(proxyListener);
 SdlCordova.onOnLanguageChange(proxyListener);
